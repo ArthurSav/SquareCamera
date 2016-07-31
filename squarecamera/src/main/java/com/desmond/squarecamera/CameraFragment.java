@@ -332,13 +332,13 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         }
 
-        final View changeCameraFlashModeBtn = getView().findViewById(R.id.flash);
+
         List<String> flashModes = parameters.getSupportedFlashModes();
         if (flashModes != null && flashModes.contains(mFlashMode)) {
             parameters.setFlashMode(mFlashMode);
-            changeCameraFlashModeBtn.setVisibility(View.VISIBLE);
+            onFlashAvailableCheck(true);
         } else {
-            changeCameraFlashModeBtn.setVisibility(View.INVISIBLE);
+            onFlashAvailableCheck(false);
         }
 
         // Lock in the changes
@@ -658,6 +658,8 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
     ///////////////////////////////////////////////////////////////////////////
     // Main Fragment handlers
     ///////////////////////////////////////////////////////////////////////////
+
+    public abstract void onFlashAvailableCheck(boolean isAvailable);
 
     public abstract void onCameraPermissionGranted();
     public abstract void onCameraPermissionDenied();

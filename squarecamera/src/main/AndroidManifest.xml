@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.desmond.squarecamera" >
+          package="com.desmond.squarecamera" >
 
-    <application android:theme="@style/squarecamera__CameraFullScreenTheme" >
+    <application>
         <activity
             android:name=".RuntimePermissionActivity"
             android:theme="@style/squarecamera__CameraFullScreenTheme.NoUI" >

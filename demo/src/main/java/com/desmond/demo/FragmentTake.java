@@ -31,7 +31,7 @@ public class FragmentTake extends CameraFragment {
                 if (!hasCameraPermissions()) {
                     requestCameraPermission();
                 }
-                else  ((TestActivity) getActivity()).openGallery();
+                //else  ((TestActivity) getActivity()).openGallery();
             }
         });
     }

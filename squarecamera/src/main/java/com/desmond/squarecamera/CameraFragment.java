@@ -1,8 +1,10 @@
 package com.desmond.squarecamera;
 
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -13,8 +15,13 @@ import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
@@ -24,26 +31,36 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import java.io.IOException;
 import java.util.List;
 
-public class CameraFragment extends Fragment implements SurfaceHolder.Callback, Camera.PictureCallback {
+public abstract class CameraFragment extends Fragment implements SurfaceHolder.Callback, Camera.PictureCallback {
+
+    private final String permissionCamera = Manifest.permission.CAMERA;
 
     public static final String TAG = CameraFragment.class.getSimpleName();
+
     public static final String CAMERA_ID_KEY = "camera_id";
+
     public static final String CAMERA_FLASH_KEY = "flash_mode";
+
     public static final String IMAGE_INFO = "image_info";
 
     private static final int PICTURE_SIZE_MAX_WIDTH = 1280;
+
     private static final int PREVIEW_SIZE_MAX_WIDTH = 640;
 
+    private static final int REQUEST_CAMERA_PERMISSION = 133;
+
     private int mCameraID;
+
     private String mFlashMode;
+
     private Camera mCamera;
+
     private SquareCameraPreview mPreviewView;
+
     private SurfaceHolder mSurfaceHolder;
 
     private boolean mIsSafeToTakePhoto = false;
@@ -52,11 +69,8 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
 
     private CameraOrientationListener mOrientationListener;
 
-    public static Fragment newInstance() {
-        return new CameraFragment();
+    public CameraFragment() {
     }
-
-    public CameraFragment() {}
 
     @Override
     public void onAttach(Context context) {
@@ -82,15 +96,17 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.squarecamera__fragment_camera, container, false);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(getLayoutId(), container, false);
     }
+
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mOrientationListener.enable();
+
+        requestCameraPermission();
 
         mPreviewView = (SquareCameraPreview) view.findViewById(R.id.camera_preview_view);
         mPreviewView.getHolder().addCallback(CameraFragment.this);
@@ -109,11 +125,7 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
                     mImageParameters.mPreviewWidth = mPreviewView.getWidth();
                     mImageParameters.mPreviewHeight = mPreviewView.getHeight();
 
-                    mImageParameters.mCoverWidth = mImageParameters.mCoverHeight
-                            = mImageParameters.calculateCoverWidthHeight();
-
-//                    Log.d(TAG, "parameters: " + mImageParameters.getStringValues());
-//                    Log.d(TAG, "cover height " + topCoverView.getHeight());
+                    mImageParameters.mCoverWidth = mImageParameters.mCoverHeight = mImageParameters.calculateCoverWidthHeight();
                     resizeTopAndBtmCover(topCoverView, btnCoverView);
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -132,59 +144,34 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
                 btnCoverView.getLayoutParams().width = mImageParameters.mCoverWidth;
             }
         }
-
-        final ImageView swapCameraBtn = (ImageView) view.findViewById(R.id.change_camera);
-        swapCameraBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mCameraID == CameraInfo.CAMERA_FACING_FRONT) {
-                    mCameraID = getBackCameraID();
-                } else {
-                    mCameraID = getFrontCameraID();
-                }
-                restartPreview();
-            }
-        });
-
-        final View changeCameraFlashModeBtn = view.findViewById(R.id.flash);
-        changeCameraFlashModeBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mFlashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_AUTO)) {
-                    mFlashMode = Camera.Parameters.FLASH_MODE_ON;
-                } else if (mFlashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_ON)) {
-                    mFlashMode = Camera.Parameters.FLASH_MODE_OFF;
-                } else if (mFlashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
-                    mFlashMode = Camera.Parameters.FLASH_MODE_AUTO;
-                }
-
-                setupFlashMode();
-                setupCamera();
-            }
-        });
-        setupFlashMode();
-
-        final ImageView takePhotoBtn = (ImageView) view.findViewById(R.id.capture_image_button);
-        takePhotoBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                takePicture();
-            }
-        });
     }
 
-    private void setupFlashMode() {
-        View view = getView();
-        if (view == null) return;
 
-        final TextView autoFlashIcon = (TextView) view.findViewById(R.id.auto_flash_icon);
-        if (Camera.Parameters.FLASH_MODE_AUTO.equalsIgnoreCase(mFlashMode)) {
-            autoFlashIcon.setText("Auto");
-        } else if (Camera.Parameters.FLASH_MODE_ON.equalsIgnoreCase(mFlashMode)) {
-            autoFlashIcon.setText("On");
-        }  else if (Camera.Parameters.FLASH_MODE_OFF.equalsIgnoreCase(mFlashMode)) {
-            autoFlashIcon.setText("Off");
+    public boolean isCameraFront() {
+        return mCameraID == CameraInfo.CAMERA_FACING_FRONT;
+    }
+
+    public void swapCamera() {
+        if (mCameraID == CameraInfo.CAMERA_FACING_FRONT) {
+            mCameraID = getBackCameraID();
+        } else {
+            mCameraID = getFrontCameraID();
         }
+        restartPreview();
+    }
+
+    public void enableCameraFlash(boolean enable) {
+
+        if (enable && !isFlashOn()) {
+            mFlashMode = Camera.Parameters.FLASH_MODE_ON;
+        } else mFlashMode = Camera.Parameters.FLASH_MODE_OFF;
+
+        setupCamera();
+    }
+
+
+    public boolean isFlashOn() {
+        return Camera.Parameters.FLASH_MODE_ON.equalsIgnoreCase(mFlashMode);
     }
 
     @Override
@@ -196,7 +183,7 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
         super.onSaveInstanceState(outState);
     }
 
-    private void resizeTopAndBtmCover( final View topCover, final View bottomCover) {
+    private void resizeTopAndBtmCover(final View topCover, final View bottomCover) {
         ResizeAnimation resizeTopAnimation
                 = new ResizeAnimation(topCover, mImageParameters);
         resizeTopAnimation.setDuration(800);
@@ -238,6 +225,8 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
      * Start the camera preview
      */
     private void startCameraPreview() {
+        if (mCamera == null) return;
+
         determineDisplayOrientation();
         setupCamera();
 
@@ -265,7 +254,7 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
         mPreviewView.setCamera(null);
     }
 
-    private void setSafeToTakePhoto(final boolean isSafeToTakePhoto) {
+    protected void setSafeToTakePhoto(final boolean isSafeToTakePhoto) {
         mIsSafeToTakePhoto = isSafeToTakePhoto;
     }
 
@@ -276,8 +265,7 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
     }
 
     /**
-     * Determine the current display orientation and rotate the camera preview
-     * accordingly
+     * Determine the current display orientation and rotate the camera preview accordingly
      */
     private void determineDisplayOrientation() {
         CameraInfo cameraInfo = new CameraInfo();
@@ -358,11 +346,11 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
     }
 
     private Size determineBestPreviewSize(Camera.Parameters parameters) {
-        return determineBestSize(parameters.getSupportedPreviewSizes(), PREVIEW_SIZE_MAX_WIDTH);
+        return determineBestSize(parameters.getSupportedPreviewSizes(), getPreviewSizeMaxWidth());
     }
 
     private Size determineBestPictureSize(Camera.Parameters parameters) {
-        return determineBestSize(parameters.getSupportedPictureSizes(), PICTURE_SIZE_MAX_WIDTH);
+        return determineBestSize(parameters.getSupportedPictureSizes(), getPictureSizeMaxWidth());
     }
 
     private Size determineBestSize(List<Size> sizes, int widthThreshold) {
@@ -403,7 +391,7 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
     /**
      * Take a picture
      */
-    private void takePicture() {
+    public void takePicture() {
 
         if (mIsSafeToTakePhoto) {
             setSafeToTakePhoto(false);
@@ -485,27 +473,22 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
 
     /**
      * A picture has been taken
+     *
      * @param data
      * @param camera
      */
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
         int rotation = getPhotoRotation();
-//        Log.d(TAG, "normal orientation: " + orientation);
-//        Log.d(TAG, "Rotate Picture by: " + rotation);
-        getFragmentManager()
-                .beginTransaction()
-                .replace(
-                        R.id.fragment_container,
-                        EditSavePhotoFragment.newInstance(data, rotation, mImageParameters.createCopy()),
-                        EditSavePhotoFragment.TAG)
-                .addToBackStack(null)
-                .commit();
-
+        onPictureTaken(data, getImageParameters().createCopy(), rotation);
         setSafeToTakePhoto(true);
     }
 
-    private int getPhotoRotation() {
+    private ImageParameters getImageParameters(){
+        return mImageParameters;
+    }
+
+    protected int getPhotoRotation() {
         int rotation;
         int orientation = mOrientationListener.getRememberedNormalOrientation();
         CameraInfo info = new CameraInfo();
@@ -525,7 +508,9 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
      */
     private static class CameraOrientationListener extends OrientationEventListener {
 
+
         private int mCurrentNormalizedOrientation;
+
         private int mRememberedNormalOrientation;
 
         public CameraOrientationListener(Context context) {
@@ -541,6 +526,7 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
 
         /**
          * @param degrees Amount of clockwise rotation from the device's natural position
+         *
          * @return Normalized degrees to just 0, 90, 180, 270
          */
         private int normalize(int degrees) {
@@ -572,4 +558,119 @@ public class CameraFragment extends Fragment implements SurfaceHolder.Callback, 
             return mRememberedNormalOrientation;
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Permissions
+    ///////////////////////////////////////////////////////////////////////////
+
+    public boolean hasCameraPermissions(){
+        return ContextCompat.checkSelfPermission(getContext(), permissionCamera) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    protected void requestCameraPermission() {
+
+        if (!hasCameraPermissions()) {
+
+            if (shouldShowRequestPermissionRationale(permissionCamera)) {
+                showPermissionRationaleDialog(getCameraPermissionRationaleMessage(), permissionCamera);
+            } else {
+                requestForPermission(permissionCamera);
+            }
+        }
+    }
+
+    @StringRes
+    protected int getCameraPermissionRationaleMessage(){
+        return R.string.squarecamera__message_permission_camera_rationale;
+    }
+
+    @StringRes
+    protected int getCameraRationalePositiveButtonMessage(){
+        return R.string.squarecamera__ok;
+    }
+
+    @StringRes
+    protected int getCameraRationaleNegativeButtonMessage(){
+        return R.string.squarecamera__cancel;
+    }
+
+    /**
+     * Rationale dialog
+     * @param message display message
+     * @param permission permissions to request if the user presses ok
+     */
+    protected void showPermissionRationaleDialog(@StringRes int message, final String permission) {
+        new AlertDialog.Builder(getContext())
+                .setMessage(message)
+                .setPositiveButton(getCameraRationalePositiveButtonMessage(), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        requestForPermission(permission);
+                    }
+                })
+                .setNegativeButton(getCameraRationaleNegativeButtonMessage(), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        onCameraPermissionDenied();
+                    }
+                })
+                .create()
+                .show();
+    }
+
+    private void requestForPermission(final String permission) {
+        requestPermissions(new String[]{permission}, REQUEST_CAMERA_PERMISSION);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        //checks camera permission state
+        if (requestCode == REQUEST_CAMERA_PERMISSION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                onCameraPermissionGranted();
+            }
+            else onCameraPermissionDenied();
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Picture size
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Override this if you want tot change the max picture width
+     * @return max picture size width
+     */
+    public int getPictureSizeMaxWidth(){
+        return PICTURE_SIZE_MAX_WIDTH;
+    }
+
+    /**
+     * Ovveride this if you want tot change the preview picture max width
+     * @return
+     */
+    public int getPreviewSizeMaxWidth(){
+        return PREVIEW_SIZE_MAX_WIDTH;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Main Fragment handlers
+    ///////////////////////////////////////////////////////////////////////////
+
+    public abstract void onCameraPermissionGranted();
+    public abstract void onCameraPermissionDenied();
+
+    /**
+     * Called when a new picture is taken
+     * @param image
+     * @param imageParameters
+     * @param rotation
+     */
+    public abstract void onPictureTaken(byte[] image, ImageParameters imageParameters, int rotation);
+
+    @LayoutRes
+    public abstract int getLayoutId();
+
 }

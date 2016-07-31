@@ -14,17 +14,18 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Display;
-import android.view.View;
 import android.widget.ImageView;
 
-import com.desmond.squarecamera.CameraActivity;
 import com.desmond.squarecamera.ImageUtility;
 
 
 public class MainActivity extends AppCompatActivity {
 
+
     private static final int REQUEST_CAMERA = 0;
+
     private static final int REQUEST_CAMERA_PERMISSION = 1;
+
     private Point mSize;
 
     @Override
@@ -32,9 +33,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        TestActivity.start(this);
+
         Display display = getWindowManager().getDefaultDisplay();
         mSize = new Point();
         display.getSize(mSize);
+        //requestForCameraPermission();
     }
 
     @Override
@@ -50,10 +54,9 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    public void requestForCameraPermission(View view) {
+    public void requestForCameraPermission() {
         final String permission = Manifest.permission.CAMERA;
-        if (ContextCompat.checkSelfPermission(MainActivity.this, permission)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(MainActivity.this, permission) != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, permission)) {
                 showPermissionRationaleDialog("Test", permission);
             } else {
@@ -88,8 +91,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void launch() {
-        Intent startCustomCameraIntent = new Intent(this, CameraActivity.class);
-        startActivityForResult(startCustomCameraIntent, REQUEST_CAMERA);
+        //Intent startCustomCameraIntent = new Intent(this, CameraActivity.class);
+        //startActivityForResult(startCustomCameraIntent, REQUEST_CAMERA);
     }
 
     @Override

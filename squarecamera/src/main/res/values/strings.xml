@@ -15,4 +15,11 @@
     <string name="squarecamera__capturing_image">Taking New Picture</string>
     <string name="squarecamera__done">Done</string>
     <string name="squarecamera__request_write_storage_permission_text">Approval is needed to save your photo on your device</string>
+
+
+    <!--Permissions-->
+    <string name="squarecamera__message_permission_camera_rationale">Please enable camera permissions in order to be able to take pictures</string>
+    <string name="squarecamera__ok">OK</string>
+
+
 </resources>

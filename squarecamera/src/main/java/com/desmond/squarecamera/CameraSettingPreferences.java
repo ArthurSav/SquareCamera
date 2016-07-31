@@ -8,7 +8,7 @@ import android.support.annotation.NonNull;
 /**
  * Created by desmond on 4/10/15.
  */
-public class CameraSettingPreferences {
+class CameraSettingPreferences {
 
     private static final String FLASH_MODE = "squarecamera__flash_mode";
 

@@ -15,14 +15,17 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/squarecamera__cover_start_height"
         android:layout_alignTop="@id/camera_preview_view"
-        android:background="@android:color/black"/>
+        android:background="@android:color/black"
+        android:visibility="visible"/>
 
     <View
         android:id="@+id/cover_bottom_view"
         android:layout_width="match_parent"
         android:layout_height="@dimen/squarecamera__cover_start_height"
         android:layout_alignBottom="@id/camera_preview_view"
-        android:background="@android:color/black"/>
+        android:elevation="24dp"
+        android:background="@android:color/black"
+        android:visibility="visible"/>
 
     <LinearLayout
         android:id="@+id/camera_tools_view"
@@ -33,7 +36,8 @@
         android:padding="10dp"
         android:orientation="horizontal"
         android:background="@android:color/black"
-        android:gravity="center">
+        android:gravity="center"
+        android:visibility="visible">
 
         <ImageView
             android:id="@+id/change_camera"

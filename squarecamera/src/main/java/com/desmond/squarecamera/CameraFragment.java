@@ -213,7 +213,7 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
             e.printStackTrace();
         }
     }
-    private int getStartCameraDelay(){
+    protected int getStartCameraDelay(){
         return 300;
     }
 

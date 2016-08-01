@@ -146,34 +146,6 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         }
     }
 
-
-    public boolean isCameraFront() {
-        return mCameraID == CameraInfo.CAMERA_FACING_FRONT;
-    }
-
-    public void swapCamera() {
-        if (mCameraID == CameraInfo.CAMERA_FACING_FRONT) {
-            mCameraID = getBackCameraID();
-        } else {
-            mCameraID = getFrontCameraID();
-        }
-        restartPreview();
-    }
-
-    public void enableCameraFlash(boolean enable) {
-
-        if (enable && !isFlashOn()) {
-            mFlashMode = Camera.Parameters.FLASH_MODE_ON;
-        } else mFlashMode = Camera.Parameters.FLASH_MODE_OFF;
-
-        setupCamera();
-    }
-
-
-    public boolean isFlashOn() {
-        return Camera.Parameters.FLASH_MODE_ON.equalsIgnoreCase(mFlashMode);
-    }
-
     @Override
     public void onSaveInstanceState(Bundle outState) {
 //        Log.d(TAG, "onSaveInstanceState");
@@ -240,6 +212,9 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
             Log.d(TAG, "Can't start camera preview due to IOException " + e);
             e.printStackTrace();
         }
+    }
+    private int getStartCameraDelay(){
+        return 300;
     }
 
     /**
@@ -419,7 +394,14 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         super.onResume();
 
         if (mCamera == null) {
-            restartPreview();
+            if (getView()!=null){
+                getView().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        restartPreview();
+                    }
+                }, getStartCameraDelay());
+            }
         }
     }
 
@@ -634,6 +616,38 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
             else onCameraPermissionDenied();
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // camera functionality
+    ///////////////////////////////////////////////////////////////////////////
+
+    public boolean isCameraFront() {
+        return mCameraID == CameraInfo.CAMERA_FACING_FRONT;
+    }
+
+    public void swapCamera() {
+        if (mCameraID == CameraInfo.CAMERA_FACING_FRONT) {
+            mCameraID = getBackCameraID();
+        } else {
+            mCameraID = getFrontCameraID();
+        }
+        restartPreview();
+    }
+
+    public void enableCameraFlash(boolean enable) {
+
+        if (enable && !isFlashOn()) {
+            mFlashMode = Camera.Parameters.FLASH_MODE_ON;
+        } else mFlashMode = Camera.Parameters.FLASH_MODE_OFF;
+
+        setupCamera();
+    }
+
+
+    public boolean isFlashOn() {
+        return Camera.Parameters.FLASH_MODE_ON.equalsIgnoreCase(mFlashMode);
+    }
+
 
     ///////////////////////////////////////////////////////////////////////////
     // Picture size

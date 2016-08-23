@@ -161,20 +161,20 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         super.onSaveInstanceState(outState);
     }
 
-    private void resizeTopAndBtmCover(final View topCover, final View bottomCover) {
-        if (topCover == null || bottomCover == null) return;
+    private void resizeTopAndBtmCover() {
+        if (topCoverView == null || bottomCoverView == null) return;
 
         ResizeAnimation resizeTopAnimation
-                = new ResizeAnimation(topCover, mImageParameters);
-        resizeTopAnimation.setDuration(500);
+                = new ResizeAnimation(topCoverView, mImageParameters);
+        resizeTopAnimation.setDuration(800);
         resizeTopAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
-        topCover.startAnimation(resizeTopAnimation);
+        topCoverView.startAnimation(resizeTopAnimation);
 
         ResizeAnimation resizeBtmAnimation
-                = new ResizeAnimation(bottomCover, mImageParameters);
-        resizeBtmAnimation.setDuration(500);
+                = new ResizeAnimation(bottomCoverView, mImageParameters);
+        resizeBtmAnimation.setDuration(800);
         resizeBtmAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
-        bottomCover.startAnimation(resizeBtmAnimation);
+        bottomCoverView.startAnimation(resizeBtmAnimation);
     }
 
     private void getCamera(int cameraID) {
@@ -406,16 +406,8 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
     @Override
     public void onResume() {
         super.onResume();
-
-        if (mCamera == null) {
-            if (getView()!=null){
-                getView().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        restartPreview();
-                    }
-                }, 1);
-            }
+        if (mSurfaceHolder != null) {
+            restartPreview();
         }
     }
 
@@ -658,11 +650,9 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         setupCamera();
     }
 
-
     public boolean isFlashOn() {
         return Camera.Parameters.FLASH_MODE_ON.equalsIgnoreCase(mFlashMode);
     }
-
 
     ///////////////////////////////////////////////////////////////////////////
     // Picture size
@@ -715,9 +705,9 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         }
 
         @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            resizeTopAndBtmCover(topCoverView, bottomCoverView);
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            resizeTopAndBtmCover();
         }
     }
 

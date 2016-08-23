@@ -37,6 +37,11 @@ public class FragmentTake extends CameraFragment {
     }
 
     @Override
+    public void onFlashAvailableCheck(boolean isAvailable) {
+
+    }
+
+    @Override
     public void onPictureTaken(byte[] image, ImageParameters imageParameters, int rotation) {
         getFragmentManager()
                 .beginTransaction()

@@ -14,6 +14,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Display;
+import android.view.View;
 import android.widget.ImageView;
 
 import com.desmond.squarecamera.ImageUtility;
@@ -33,12 +34,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        TestActivity.start(this);
-
         Display display = getWindowManager().getDefaultDisplay();
         mSize = new Point();
         display.getSize(mSize);
         //requestForCameraPermission();
+
+        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TestActivity.start(MainActivity.this);
+            }
+        });
     }
 
     @Override
@@ -91,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void launch() {
+
         //Intent startCustomCameraIntent = new Intent(this, CameraActivity.class);
         //startActivityForResult(startCustomCameraIntent, REQUEST_CAMERA);
     }

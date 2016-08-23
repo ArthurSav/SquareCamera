@@ -13,6 +13,7 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Size;
 import android.hardware.SensorManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
@@ -69,6 +70,11 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
 
     private CameraOrientationListener mOrientationListener;
 
+    private View topCoverView;
+    private View bottomCoverView;
+
+    private AsyncTask previewTask;
+
     public CameraFragment() {
     }
 
@@ -111,8 +117,8 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         mPreviewView = (SquareCameraPreview) view.findViewById(R.id.camera_preview_view);
         mPreviewView.getHolder().addCallback(CameraFragment.this);
 
-        final View topCoverView = view.findViewById(R.id.cover_top_view);
-        final View btnCoverView = view.findViewById(R.id.cover_bottom_view);
+         topCoverView = view.findViewById(R.id.cover_top_view);
+         bottomCoverView = view.findViewById(R.id.cover_bottom_view);
 
         mImageParameters.mIsPortrait =
                 getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
@@ -126,7 +132,7 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
                     mImageParameters.mPreviewHeight = mPreviewView.getHeight();
 
                     mImageParameters.mCoverWidth = mImageParameters.mCoverHeight = mImageParameters.calculateCoverWidthHeight();
-                    resizeTopAndBtmCover(topCoverView, btnCoverView);
+//                    resizeTopAndBtmCover(topCoverView, btnCoverView);
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                         mPreviewView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
@@ -138,10 +144,10 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         } else {
             if (mImageParameters.isPortrait()) {
                 topCoverView.getLayoutParams().height = mImageParameters.mCoverHeight;
-                btnCoverView.getLayoutParams().height = mImageParameters.mCoverHeight;
+                bottomCoverView.getLayoutParams().height = mImageParameters.mCoverHeight;
             } else {
                 topCoverView.getLayoutParams().width = mImageParameters.mCoverWidth;
-                btnCoverView.getLayoutParams().width = mImageParameters.mCoverWidth;
+                bottomCoverView.getLayoutParams().width = mImageParameters.mCoverWidth;
             }
         }
     }
@@ -156,6 +162,8 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
     }
 
     private void resizeTopAndBtmCover(final View topCover, final View bottomCover) {
+        if (topCover == null || bottomCover == null) return;
+
         ResizeAnimation resizeTopAnimation
                 = new ResizeAnimation(topCover, mImageParameters);
         resizeTopAnimation.setDuration(800);
@@ -190,7 +198,7 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         }
 
         getCamera(mCameraID);
-        startCameraPreview();
+        startCameraPreviewWithDelay();
     }
 
     /**
@@ -213,8 +221,14 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
             e.printStackTrace();
         }
     }
-    protected int getStartCameraDelay(){
-        return 300;
+
+    private void startCameraPreviewWithDelay(){
+        cancelPreviewTaskIfRunning();
+        previewTask = new  PreviewTask().execute(1);
+    }
+
+    private void cancelPreviewTaskIfRunning(){
+        if (previewTask != null) previewTask.cancel(true);
     }
 
     /**
@@ -400,7 +414,7 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
                     public void run() {
                         restartPreview();
                     }
-                }, getStartCameraDelay());
+                }, 1);
             }
         }
     }
@@ -408,6 +422,7 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
     @Override
     public void onStop() {
         mOrientationListener.disable();
+        cancelPreviewTaskIfRunning();
 
         // stop the preview
         if (mCamera != null) {
@@ -426,7 +441,7 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
         mSurfaceHolder = holder;
 
         getCamera(mCameraID);
-        startCameraPreview();
+        startCameraPreviewWithDelay();
     }
 
     @Override
@@ -688,5 +703,22 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
 
     @LayoutRes
     public abstract int getLayoutId();
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Async
+    ///////////////////////////////////////////////////////////////////////////
+
+    private class PreviewTask extends AsyncTask<Integer, Void, Void> {
+        protected Void doInBackground(Integer... urls) {
+            startCameraPreview();
+            return null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            resizeTopAndBtmCover(topCoverView, bottomCoverView);
+        }
+    }
 
 }

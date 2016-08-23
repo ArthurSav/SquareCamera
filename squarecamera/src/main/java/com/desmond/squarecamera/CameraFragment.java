@@ -166,13 +166,13 @@ public abstract class CameraFragment extends Fragment implements SurfaceHolder.C
 
         ResizeAnimation resizeTopAnimation
                 = new ResizeAnimation(topCover, mImageParameters);
-        resizeTopAnimation.setDuration(800);
+        resizeTopAnimation.setDuration(500);
         resizeTopAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
         topCover.startAnimation(resizeTopAnimation);
 
         ResizeAnimation resizeBtmAnimation
                 = new ResizeAnimation(bottomCover, mImageParameters);
-        resizeBtmAnimation.setDuration(800);
+        resizeBtmAnimation.setDuration(500);
         resizeBtmAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
         bottomCover.startAnimation(resizeBtmAnimation);
     }
